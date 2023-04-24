@@ -20,14 +20,26 @@ pub fn main() !void {
     const allocator = arena.allocator();
 
     var q = std.os.getenv("QUERY_STRING");
-    var query = try str.dup(allocator, q.?[2..]);
+    if (q == null) return;
+    var loc = std.mem.indexOf(u8, q.?, "&");
+    var page: []const u8 = "";
+    var page_no: u16 = 0;
+    var query: []u8 = "";
+    if (loc != null) {
+        query = try str.dup(allocator, q.?[2..loc.?]);
+        page = q.?[loc.? + 6 ..];
+        page_no = try std.fmt.parseUnsigned(u16, page, 10);
+    } else {
+        query = try str.dup(allocator, q.?[2..]);
+    }
+    var raw_query = try str.dup(allocator, query);
 
     var buf: [1000]u8 = undefined;
     buf[0] = 0; // version
     buf[1] = 1; // method
-    buf[2] = 5; // len low
+    buf[2] = 10; // len low
     buf[3] = 0; // len high
-    buf[4] = 0; // offset low
+    buf[4] = 10 * @truncate(u8, page_no); // offset low
     buf[5] = 0; // offset high
     const len = @truncate(u16, query.len);
     const lenp = std.mem.asBytes(&len);
@@ -77,7 +89,8 @@ pub fn main() !void {
         \\</form>
         \\<h4>Approx {d} results in {d:.3} seconds</h4>
         \\</div>
-    , .{ total_results, @intToFloat(f64, search_time) / 1e9 });
+        \\<p>Page {d}</p>
+    , .{ total_results, @intToFloat(f64, search_time) / 1e9, page_no + 1 });
 
     try stdout.print("<ul>\n", .{});
     var offset: usize = 6;
@@ -90,6 +103,7 @@ pub fn main() !void {
         const name = results_buffer[offset .. offset + name_len];
         try stdout.print("<a href='http://{s}'>{s}</a>\n", .{ name, name });
         offset += name_len;
+        offset += 2; // skip docno
         const snippet_len = read16(&results_buffer, offset);
         offset += 2;
         try stdout.print("<p>{s}</p>\n\n", .{results_buffer[offset .. offset + snippet_len]});
@@ -97,6 +111,7 @@ pub fn main() !void {
         try stdout.print("</li>\n", .{});
     }
     try stdout.print("</ul>\n", .{});
+    try stdout.print("<a href='?q={s}&page={d}'>Next Page</a>\n", .{ raw_query, page_no + 1 });
     try stdout.print("</body>\n", .{});
     try stdout.print("</html>\n", .{});
 }
