@@ -111,7 +111,8 @@ pub fn main() !void {
         try stdout.print("</li>\n", .{});
     }
     try stdout.print("</ul>\n", .{});
-    try stdout.print("<a href='?q={s}&page={d}'>Next Page</a>\n", .{ raw_query, page_no + 2 });
+    if (no_results == 10)
+        try stdout.print("<a href='?q={s}&page={d}'>Next Page</a>\n", .{ raw_query, page_no + 2 });
     try stdout.print("</body>\n", .{});
     try stdout.print("</html>\n", .{});
 }
