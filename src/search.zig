@@ -28,7 +28,7 @@ pub fn main() !void {
     if (loc != null) {
         query = try str.dup(allocator, q.?[2..loc.?]);
         page = q.?[loc.? + 6 ..];
-        page_no = try std.fmt.parseUnsigned(u16, page, 10);
+        page_no = try std.fmt.parseUnsigned(u16, page, 10) - 1;
     } else {
         query = try str.dup(allocator, q.?[2..]);
     }
@@ -111,7 +111,7 @@ pub fn main() !void {
         try stdout.print("</li>\n", .{});
     }
     try stdout.print("</ul>\n", .{});
-    try stdout.print("<a href='?q={s}&page={d}'>Next Page</a>\n", .{ raw_query, page_no + 1 });
+    try stdout.print("<a href='?q={s}&page={d}'>Next Page</a>\n", .{ raw_query, page_no + 2 });
     try stdout.print("</body>\n", .{});
     try stdout.print("</html>\n", .{});
 }
