@@ -23,12 +23,16 @@ pub fn main() !void {
     var query = try str.dup(allocator, q.?[2..]);
 
     var buf: [1000]u8 = undefined;
-    buf[0] = 0;
-    buf[1] = 0;
+    buf[0] = 0; // version
+    buf[1] = 1; // method
+    buf[2] = 5; // len low
+    buf[3] = 0; // len high
+    buf[4] = 0; // offset low
+    buf[5] = 0; // offset high
     const len = @truncate(u16, query.len);
     const lenp = std.mem.asBytes(&len);
-    std.mem.copy(u8, buf[2..], lenp);
-    std.mem.copy(u8, buf[4..], query);
+    std.mem.copy(u8, buf[6..], lenp);
+    std.mem.copy(u8, buf[8..], query);
 
     var results_buffer: [16384]u8 = undefined;
 
@@ -36,7 +40,7 @@ pub fn main() !void {
 
     var stream = try std.net.connectUnixSocket(socket_name);
 
-    _ = try stream.write(buf[0 .. 4 + query.len]);
+    _ = try stream.write(buf[0 .. 8 + query.len]);
 
     var total_read: usize = 0;
     while (true) {
@@ -50,8 +54,9 @@ pub fn main() !void {
 
     const search_time = timer.read();
 
-    const total_results = read16(&results_buffer, 0);
-    const no_results = read16(&results_buffer, 2);
+    // skip method and version
+    const total_results = read16(&results_buffer, 2);
+    const no_results = read16(&results_buffer, 4);
 
     try stdout.print("Content-type: text/html; charset=utf-8\n\n", .{});
 
@@ -75,7 +80,7 @@ pub fn main() !void {
     , .{ total_results, @intToFloat(f64, search_time) / 1e9 });
 
     try stdout.print("<ul>\n", .{});
-    var offset: usize = 4;
+    var offset: usize = 6;
 
     var i: usize = 0;
     while (i < no_results) : (i += 1) {
