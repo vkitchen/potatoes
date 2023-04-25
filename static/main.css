@@ -172,3 +172,11 @@ li {
 	margin-bottom: 30px;
 	max-width: 800px;
 }
+
+h4 {
+	margin: 10px 0;
+}
+
+li p {
+	margin-top: 10px;
+}

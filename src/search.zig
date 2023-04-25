@@ -103,7 +103,13 @@ pub fn main() !void {
         const name = results_buffer[offset .. offset + name_len];
         try stdout.print("<a href='http://{s}'>{s}</a>\n", .{ name, name });
         offset += name_len;
-        offset += 2; // skip docno
+        const title_len = read16(&results_buffer, offset);
+        offset += 2;
+        if (title_len > 0) {
+            const title = results_buffer[offset .. offset + title_len];
+            try stdout.print("<h4>{s}</h4>\n", .{title});
+            offset += title_len;
+        }
         const snippet_len = read16(&results_buffer, offset);
         offset += 2;
         try stdout.print("<p>{s}</p>\n\n", .{results_buffer[offset .. offset + snippet_len]});
