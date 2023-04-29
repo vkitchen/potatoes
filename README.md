@@ -4,7 +4,7 @@ This is the website of [potatocastles.com](http://potatocastles.com). The search
 
 ## Compiling
 
-Install zig 0.10 and run `zig build`
+Install Zig 0.11.0-dev.2866+afbcad993 and run `zig build`
 
 ## Usage
 
