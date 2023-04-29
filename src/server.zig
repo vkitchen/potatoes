@@ -298,7 +298,7 @@ fn handle_search(res: *std.http.Server.Response) !void {
         \\<body>
         \\<div class='header'>
         \\<h1 class='logo'><a href='/'>Potato Castles</a></h1>
-        \\<form class='site-search' action='/cgi-bin/search-recipes' method='get'>
+        \\<form class='site-search' action='/search' method='get'>
         \\<input class='search-input' type='text' name='q' placeholder='Search recipes...'><!--
         \\--><input class='search-submit' type='submit' value='Search'>
         \\</form>
