@@ -232,8 +232,36 @@ const css =
     \\}
 ;
 
+fn handle_404(res: *std.http.Server.Response) !void {
+    try res.headers.append("content-type", "text/plain; charset=utf-8");
+    res.transfer_encoding = .{ .content_length = 3 };
+    try res.do();
+    try res.writer().writeAll("404");
+    try res.finish();
+}
+
 fn handle_search(res: *std.http.Server.Response) !void {
     std.debug.print("{} {s}\n", .{ res.request.method, res.request.target });
+
+    var param_q = std.mem.indexOf(u8, res.request.target, "?q=");
+    var param_page = std.mem.indexOf(u8, res.request.target, "&page=");
+
+    if (param_q == null)
+        return handle_404(res);
+
+    var q: []const u8 = undefined;
+    if (param_page) |page_| {
+        q = res.request.target[param_q.? + 3 .. page_];
+    } else {
+        q = res.request.target[param_q.? + 3 ..];
+    }
+
+    var page: u16 = 1;
+    if (param_page) |page_| {
+        page = try std.fmt.parseUnsigned(u16, res.request.target[page_ + 6 ..], 10);
+    }
+
+    std.debug.print("Query {s} page {d}\n", .{ q, page });
 
     try res.headers.append("content-type", "text/html; charset=utf-8");
     res.transfer_encoding = .{ .content_length = search.len };
