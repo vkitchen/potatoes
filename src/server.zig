@@ -341,50 +341,51 @@ fn handle_search(res: *std.http.Server.Response) !void {
 }
 
 fn handler(res: *std.http.Server.Response) !void {
-    while (true) {
-        defer res.reset();
+    defer res.deinit();
+    defer res.reset();
 
-        try res.wait();
+    try res.wait();
 
-        try res.headers.append("connection", "close");
+    try res.headers.append("connection", "close");
 
-        if (std.mem.eql(u8, res.request.target, "/")) {
-            try res.headers.append("content-type", "text/html; charset=utf-8");
-            res.transfer_encoding = .{ .content_length = index.len };
-            try res.do();
-            try res.writer().writeAll(index);
-            try res.finish();
-        } else if (std.mem.startsWith(u8, res.request.target, "/search")) {
-            try handle_search(res);
-        } else if (std.mem.eql(u8, res.request.target, "/static/main.css")) {
-            try res.headers.append("content-type", "text/css; charset=utf-8");
-            res.transfer_encoding = .{ .content_length = css.len };
-            try res.do();
-            try res.writer().writeAll(css);
-            try res.finish();
-        } else {
-            try res.headers.append("content-type", "text/plain; charset=utf-8");
-            res.transfer_encoding = .{ .content_length = 3 };
-            try res.do();
-            try res.writer().writeAll("404");
-            try res.finish();
-        }
-
-        if (res.connection.conn.closing)
-            break;
+    if (std.mem.eql(u8, res.request.target, "/")) {
+        try res.headers.append("content-type", "text/html; charset=utf-8");
+        res.transfer_encoding = .{ .content_length = index.len };
+        try res.do();
+        try res.writer().writeAll(index);
+        try res.finish();
+    } else if (std.mem.startsWith(u8, res.request.target, "/search")) {
+        try handle_search(res);
+    } else if (std.mem.eql(u8, res.request.target, "/static/main.css")) {
+        try res.headers.append("content-type", "text/css; charset=utf-8");
+        res.transfer_encoding = .{ .content_length = css.len };
+        try res.do();
+        try res.writer().writeAll(css);
+        try res.finish();
+    } else {
+        try res.headers.append("content-type", "text/plain; charset=utf-8");
+        res.transfer_encoding = .{ .content_length = 3 };
+        try res.do();
+        try res.writer().writeAll("404");
+        try res.finish();
     }
 }
 
 pub fn main() !void {
-    var server = std.http.Server.init(std.heap.page_allocator, .{ .reuse_address = true });
+    var buffer: [8192]u8 = undefined;
+
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    var server = std.http.Server.init(allocator, .{ .reuse_address = true });
     defer server.deinit();
 
     try server.listen(try std.net.Address.parseIp("127.0.0.1", 8080));
 
     while (true) {
-        const res = try server.accept(.{ .dynamic = 8192 });
-
-        const thread = try std.Thread.spawn(.{}, handler, .{res});
-        thread.detach();
+        if (server.accept(.{ .static = &buffer })) |res| {
+            handler(res) catch {};
+        } else |_| {}
     }
 }
