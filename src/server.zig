@@ -244,27 +244,25 @@ fn handle_search(res: *std.http.Server.Response) !void {
         page = try std.fmt.parseUnsigned(u16, res.request.target[page_ + 6 ..], 10);
     }
 
-    // Build query
-    var buf: [1000]u8 = undefined;
-    buf[0] = 0; // version
-    buf[1] = 1; // method
-    buf[2] = 10; // len low
-    buf[3] = 0; // len high
-    buf[4] = 10 * @truncate(u8, page - 1); // offset low
-    buf[5] = 0; // offset high
-    const len = @truncate(u16, query.len);
-    const lenp = std.mem.asBytes(&len);
-    std.mem.copy(u8, buf[6..], lenp);
-    std.mem.copy(u8, buf[8..], query);
-
-    var results_buffer: [16384]u8 = undefined;
-
     // Search
     var timer = try std.time.Timer.start();
 
     var stream = try std.net.connectUnixSocket(socket_name);
 
-    _ = try stream.write(buf[0 .. 8 + query.len]);
+    // Build query
+    var search_req_bufferer = std.io.bufferedWriter(stream.writer());
+    var search_req = search_req_bufferer.writer();
+
+    try search_req.writeByte(0); // version
+    try search_req.writeByte(1); // method
+    try search_req.writeIntNative(u16, 10); // res len
+    try search_req.writeIntNative(u16, 10 * (page - 1)); // res offset
+    try search_req.writeIntNative(u16, @truncate(u16, query.len)); // query len
+    try search_req.writeAll(query); // query
+
+    try search_req_bufferer.flush();
+
+    var results_buffer: [16384]u8 = undefined;
 
     var total_read: usize = 0;
     while (true) {
