@@ -370,20 +370,20 @@ fn handler(res: *std.http.Server.Response) !void {
 }
 
 pub fn main() !void {
-    var buffer: [8192]u8 = undefined;
+    var buffer_headers: [8192]u8 = undefined;
+    var buffer_requests: [16384]u8 = undefined;
 
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
+    var allocator = std.heap.FixedBufferAllocator.init(&buffer_requests);
 
-    var server = std.http.Server.init(allocator, .{ .reuse_address = true });
+    var server = std.http.Server.init(allocator.allocator(), .{ .reuse_address = true });
     defer server.deinit();
 
     try server.listen(try std.net.Address.parseIp("127.0.0.1", 8080));
 
     while (true) {
-        if (server.accept(.{ .static = &buffer })) |res| {
+        if (server.accept(.{ .static = &buffer_headers })) |res| {
             handler(res) catch {};
         } else |_| {}
+        allocator.reset();
     }
 }
