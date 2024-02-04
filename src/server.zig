@@ -313,7 +313,7 @@ fn handle_search(res: *std.http.Server.Response) !void {
         const name_len = read16(&results_buffer, offset);
         offset += 2;
         const name = results_buffer[offset .. offset + name_len];
-        try res.writer().print("<a href='http://{s}'>{s}</a>\n", .{ name, name });
+        try res.writer().print("<a href='{s}'>{s}</a>\n", .{ name, name });
         offset += name_len;
         const title_len = read16(&results_buffer, offset);
         offset += 2;
