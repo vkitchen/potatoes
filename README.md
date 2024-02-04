@@ -4,8 +4,4 @@ This is the website of [potatocastles.com](http://potatocastles.com). The search
 
 ## Compiling
 
-Install Zig 0.11.0-dev.2866+afbcad993 and run `zig build`
-
-## Usage
-
-You'll need a cgi server then drop the built binary in the cgi-bin. You'll also need the search engine running
+Install Zig 0.12.0-dev.2312+2e7d28dd0 and run `zig build`

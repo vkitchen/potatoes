@@ -4,6 +4,7 @@
 //	Released under the ISC license (https://opensource.org/licenses/ISC)
 
 const std = @import("std");
+const native_endian = @import("builtin").target.cpu.arch.endian();
 
 const socket_name = "/tmp/cocomel.sock";
 
@@ -219,15 +220,14 @@ fn read16(buf: []const u8, offset: usize) u16 {
 fn handle_404(res: *std.http.Server.Response) !void {
     try res.headers.append("content-type", "text/plain; charset=utf-8");
     res.transfer_encoding = .{ .content_length = 3 };
-    try res.do();
     try res.writer().writeAll("404");
     try res.finish();
 }
 
 fn handle_search(res: *std.http.Server.Response) !void {
     // Parse params
-    var param_query = std.mem.indexOf(u8, res.request.target, "?q=");
-    var param_page = std.mem.indexOf(u8, res.request.target, "&page=");
+    const param_query = std.mem.indexOf(u8, res.request.target, "?q=");
+    const param_page = std.mem.indexOf(u8, res.request.target, "&page=");
 
     if (param_query == null)
         return handle_404(res);
@@ -255,9 +255,9 @@ fn handle_search(res: *std.http.Server.Response) !void {
 
     try search_req.writeByte(0); // version
     try search_req.writeByte(1); // method
-    try search_req.writeIntNative(u16, 10); // res len
-    try search_req.writeIntNative(u16, 10 * (page - 1)); // res offset
-    try search_req.writeIntNative(u16, @truncate(u16, query.len)); // query len
+    try search_req.writeInt(u16, 10, native_endian); // res len
+    try search_req.writeInt(u16, 10 * (page - 1), native_endian); // res offset
+    try search_req.writeInt(u16, @truncate(query.len), native_endian); // query len
     try search_req.writeAll(query); // query
 
     try search_req_bufferer.flush();
@@ -266,7 +266,7 @@ fn handle_search(res: *std.http.Server.Response) !void {
 
     var total_read: usize = 0;
     while (true) {
-        var bytes_read = try stream.read(results_buffer[total_read..]);
+        const bytes_read = try stream.read(results_buffer[total_read..]);
         if (bytes_read == 0)
             break;
         total_read += bytes_read;
@@ -279,7 +279,6 @@ fn handle_search(res: *std.http.Server.Response) !void {
     // Write results
     try res.headers.append("content-type", "text/html; charset=utf-8");
     res.transfer_encoding = .chunked;
-    try res.do();
 
     // skip method and version
     const total_results = read16(&results_buffer, 2);
@@ -303,7 +302,7 @@ fn handle_search(res: *std.http.Server.Response) !void {
         \\<h4>Approx {d} results in {d:.3} seconds</h4>
         \\</div>
         \\<p>Page {d}</p>
-    , .{ total_results, @intToFloat(f64, search_time) / 1e9, page });
+    , .{ total_results, @as(f64, @floatFromInt(search_time)) / 1e9, page });
 
     try res.writer().print("<ul>\n", .{});
     var offset: usize = 6;
@@ -340,7 +339,7 @@ fn handle_search(res: *std.http.Server.Response) !void {
 
 fn handler(res: *std.http.Server.Response) !void {
     defer res.deinit();
-    defer res.reset();
+    defer _ = res.reset();
 
     try res.wait();
 
@@ -349,7 +348,6 @@ fn handler(res: *std.http.Server.Response) !void {
     if (std.mem.eql(u8, res.request.target, "/")) {
         try res.headers.append("content-type", "text/html; charset=utf-8");
         res.transfer_encoding = .{ .content_length = index.len };
-        try res.do();
         try res.writer().writeAll(index);
         try res.finish();
     } else if (std.mem.startsWith(u8, res.request.target, "/search")) {
@@ -357,13 +355,11 @@ fn handler(res: *std.http.Server.Response) !void {
     } else if (std.mem.eql(u8, res.request.target, "/static/main.css")) {
         try res.headers.append("content-type", "text/css; charset=utf-8");
         res.transfer_encoding = .{ .content_length = css.len };
-        try res.do();
         try res.writer().writeAll(css);
         try res.finish();
     } else {
         try res.headers.append("content-type", "text/plain; charset=utf-8");
         res.transfer_encoding = .{ .content_length = 3 };
-        try res.do();
         try res.writer().writeAll("404");
         try res.finish();
     }
@@ -375,15 +371,17 @@ pub fn main() !void {
 
     var allocator = std.heap.FixedBufferAllocator.init(&buffer_requests);
 
-    var server = std.http.Server.init(allocator.allocator(), .{ .reuse_address = true });
+    var server = std.http.Server.init(.{ .reuse_address = true });
     defer server.deinit();
 
     try server.listen(try std.net.Address.parseIp("127.0.0.1", 8080));
 
     while (true) {
-        if (server.accept(.{ .static = &buffer_headers })) |res| {
-            handler(res) catch {};
-        } else |_| {}
+        var res = server.accept(.{ .allocator = allocator.allocator(), .header_strategy = .{ .static = &buffer_headers } }) catch {
+            allocator.reset();
+            continue;
+        };
+        try handler(&res);
         allocator.reset();
     }
 }
