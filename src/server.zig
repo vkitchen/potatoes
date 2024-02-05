@@ -218,8 +218,9 @@ fn read16(buf: []const u8, offset: usize) u16 {
 }
 
 fn handle_404(res: *std.http.Server.Response) !void {
-    try res.headers.append("content-type", "text/plain; charset=utf-8");
+    try res.headers.append("Content-Type", "text/plain; charset=utf-8");
     res.transfer_encoding = .{ .content_length = 3 };
+    try res.send();
     try res.writer().writeAll("404");
     try res.finish();
 }
@@ -277,8 +278,9 @@ fn handle_search(res: *std.http.Server.Response) !void {
     const search_time = timer.read();
 
     // Write results
-    try res.headers.append("content-type", "text/html; charset=utf-8");
+    try res.headers.append("Content-Type", "text/html; charset=utf-8");
     res.transfer_encoding = .chunked;
+    try res.send();
 
     // skip method and version
     const total_results = read16(&results_buffer, 2);
@@ -346,22 +348,21 @@ fn handler(res: *std.http.Server.Response) !void {
     try res.headers.append("connection", "close");
 
     if (std.mem.eql(u8, res.request.target, "/")) {
-        try res.headers.append("content-type", "text/html; charset=utf-8");
+        try res.headers.append("Content-Type", "text/html; charset=utf-8");
         res.transfer_encoding = .{ .content_length = index.len };
+        try res.send();
         try res.writer().writeAll(index);
         try res.finish();
     } else if (std.mem.startsWith(u8, res.request.target, "/search")) {
         try handle_search(res);
     } else if (std.mem.eql(u8, res.request.target, "/static/main.css")) {
-        try res.headers.append("content-type", "text/css; charset=utf-8");
+        try res.headers.append("Content-Type", "text/css; charset=utf-8");
         res.transfer_encoding = .{ .content_length = css.len };
+        try res.send();
         try res.writer().writeAll(css);
         try res.finish();
     } else {
-        try res.headers.append("content-type", "text/plain; charset=utf-8");
-        res.transfer_encoding = .{ .content_length = 3 };
-        try res.writer().writeAll("404");
-        try res.finish();
+        return handle_404(res);
     }
 }
 
