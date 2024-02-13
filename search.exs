@@ -23,21 +23,12 @@ defmodule Search do
   def parse(<<url_len::native-16, url::binary-size(url_len), title_len::native-16, title::binary-size(title_len), snippet_len::native-16, snippet::binary-size(snippet_len), tail::binary>>) do
     [[url, title, snippet] | parse(tail)]
   end
-
-  def print([]), do: nil
-
-  def print([[url, title, snippet] | tail]) do
-    IO.puts("#{title}\n#{url}\n#{snippet}\n")
-
-    print(tail)
-  end
 end
 
 query = IO.gets("Query> ")
 
 <<_version::16, total_results::native-16, payload_results::native-16, payload::binary>> = Search.search(query)
+results = Search.parse(payload)
 
 IO.puts("Showing #{payload_results}/#{total_results}")
-
-results = Search.parse(payload)
-Search.print(results)
+Enum.each(results, fn [url, title, snippet] -> IO.puts("#{title}\n#{url}\n#{snippet}\n") end)
