@@ -1,7 +1,18 @@
-# Potatoes - [potatocastles.com](http://potatocastles.com) webshit
+# Potatoes
 
-This is the website of [potatocastles.com](http://potatocastles.com). The search engine is here [vkitchen/cocomel](https://github.com/vkitchen/cocomel) and the crawler here [vkitchen/crawler](https://github.com/vkitchen/crawler)
+To start your Phoenix server:
 
-## Compiling
+  * Run `mix setup` to install and setup dependencies
+  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
 
-Install Zig 0.12.0-dev.2312+2e7d28dd0 and run `zig build`
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+
+## Learn more
+
+  * Official website: https://www.phoenixframework.org/
+  * Guides: https://hexdocs.pm/phoenix/overview.html
+  * Docs: https://hexdocs.pm/phoenix
+  * Forum: https://elixirforum.com/c/phoenix-forum
+  * Source: https://github.com/phoenixframework/phoenix
