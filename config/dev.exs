@@ -15,7 +15,8 @@ config :potatoes, PotatoesWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "3FqGA92zdnrn6wSZyDR8JR1deKdxDvOwVzY52P+LZ/Cqv59QBznGsOZppBsP2kL8",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    sass: {DartSass, :install_and_run, [:default, ~w(--embed-source-map --source-map-urls=absolute --watch)]}
   ]
 
 # ## SSL Support
