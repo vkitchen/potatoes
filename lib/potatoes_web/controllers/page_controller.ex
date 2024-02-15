@@ -6,4 +6,15 @@ defmodule PotatoesWeb.PageController do
     # so skip the default app layout.
     render(conn, :home, layout: false)
   end
+
+  def search(conn, %{"q" => query}) do
+    case String.length(query) do
+      0 -> redirect(conn, to: ~p"/")
+      _ -> render(conn, :search, query: query)
+    end
+  end
+
+  def search(conn, _params) do
+    redirect(conn, to: ~p"/")
+  end
 end
