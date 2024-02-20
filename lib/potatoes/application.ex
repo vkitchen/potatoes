@@ -15,6 +15,7 @@ defmodule Potatoes.Application do
       {Finch, name: Potatoes.Finch},
       # Start a worker by calling: Potatoes.Worker.start_link(arg)
       # {Potatoes.Worker, arg},
+      {Cocomel, []},
       # Start to serve requests, typically the last entry
       PotatoesWeb.Endpoint
     ]

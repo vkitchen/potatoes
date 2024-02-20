@@ -10,7 +10,9 @@ defmodule PotatoesWeb.PageController do
   def search(conn, %{"q" => query}) do
     case String.length(query) do
       0 -> redirect(conn, to: ~p"/")
-      _ -> render(conn, :search, query: query)
+      _ ->
+        results = Cocomel.search(query)
+        render(conn, :search, query: results)
     end
   end
 
