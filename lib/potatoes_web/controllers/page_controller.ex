@@ -12,7 +12,7 @@ defmodule PotatoesWeb.PageController do
       0 -> redirect(conn, to: ~p"/")
       _ ->
         results = Cocomel.search(query)
-        render(conn, :search, query: results)
+        render(conn, :search, query: query, results: results)
     end
   end
 
