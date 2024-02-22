@@ -3,7 +3,7 @@
   <h4>Results for '<%= @query %>'</h4>
   <%= for result <- @results do %>
     <% [ link, title, desc ] = result %>
-    <p><%= link %></p>
+    <p><.link href={link}><%= link %></.link></p>
     <p><%= title %></p>
     <p><%= desc %></p>
   <% end %>
