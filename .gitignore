@@ -1,6 +1,3 @@
-zig-out/
-zig-cache/
-
 # The directory Mix will write compiled artifacts to.
 /_build/
 
