@@ -24,18 +24,20 @@ defmodule Cocomel do
     [[url, title, snippet] | parse(tail)]
   end
 
-  def handle_call({:search, query}, _from, state) do
+  def handle_call({:search, query, page}, _from, state) do
+    offset = 10 * (page - 1)
+
     opts = [:binary, active: false, reuseaddr: true]
     {:ok, sock} = :gen_tcp.connect({:local, "/tmp/cocomel.sock"}, 0, opts)
-    :ok = :gen_tcp.send(sock, <<0, 1, 5::native-16, 0::native-16, String.length(query)::native-16, query::binary>>)
+    :ok = :gen_tcp.send(sock, <<0, 1, 10::native-16, offset::native-16, String.length(query)::native-16, query::binary>>)
 
-    <<_version::16, total_results::native-16, payload_results::native-16, payload::binary>> = recv(sock)
+    <<_version::16, total_results::native-16, _payload_results::native-16, payload::binary>> = recv(sock)
     results = parse(payload)
 
-    {:reply, results, state}
+    {:reply, %{ total: total_results, results: results }, state}
   end
 
-  def search(query) do
-    GenServer.call(__MODULE__, {:search, query})
+  def search(query, page) do
+    GenServer.call(__MODULE__, {:search, query, page})
   end
 end

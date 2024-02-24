@@ -1,10 +1,23 @@
+<header>
+  <a class="logo" href="/">Potato Castles</a>
+  <form class="search" action="/search" method="get">
+    <input class="search__input" type="text" name="q" placeholder="Search recipes..." value={ @query }>
+    <input type="hidden" name="page" value="1">
+    <input class="search__submit" type="submit" value="Search">
+  </form>
+</header>
 <main>
-  <h1>Potato Castles</h1>
-  <h4>Results for '<%= @query %>'</h4>
+  <h4>About <%= @total %> results for '<%= @query %>'</h4>
+  <h6>Page <%= @page %></h6>
   <%= for result <- @results do %>
     <% [ link, title, desc ] = result %>
-    <p><.link href={link}><%= link %></.link></p>
+    <p><.link href={ link }><%= link %></.link></p>
     <p><%= title %></p>
-    <p><%= desc %></p>
+    <p><%= raw(desc) %></p>
   <% end %>
+  <form action="/search" method="get">
+    <input type="hidden" name="q" value={ @query }>
+    <input type="hidden" name="page" value={ @page + 1 }>
+    <input type="submit" value="Next Page">
+  </form>
 </main>

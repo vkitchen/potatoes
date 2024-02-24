@@ -1,1 +1,18 @@
 @use 'pico.classless';
+
+.logo {
+  font-size: 2rem;
+  text-decoration: none;
+}
+
+.search {
+  display: inline;
+}
+
+.search__input {
+  max-width: 360px;
+}
+
+.search__submit {
+  max-width: 120px;
+}
